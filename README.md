@@ -21,16 +21,7 @@ Normally you'd copy those numbers, look up which line of code they point to, gue
 the bug, edit, rebuild, re-flash, and watch again. numogram gives Hermes the hands to
 do that loop itself:
 
-```mermaid
-flowchart LR
-    A["💥 Board crashes"] --> B["Read the crash<br/>over USB"]
-    B --> C["Find the exact<br/>line of code"]
-    C --> D["Fix the code"]
-    D --> E{"✋ You approve"}
-    E --> F["Build and flash<br/>the fix"]
-    F --> G["Watch it run"]
-    G -- "crashes again" --> B
-```
+**💥 crash → read it over USB → find the exact line → fix the code → ✋ you approve → build and flash → watch it run** (and around again if it still crashes)
 
 ## What it caught
 
@@ -172,7 +163,7 @@ that runs inside Hermes and does things text can't.
 | Older Xtensa chips (ESP32, S2, S3) | Flashing should work; crash reading is untested |
 | Schematic pin check | Pin rules for 11 chips, from Espressif's ESP-IDF docs |
 
-<img src="https://github.com/user-attachments/assets/ad8cc5ab-df89-45d3-94ad-0cf43870d64b" alt="The ESP32-P4 board from the demo, plugged in over USB-C" width="420">
+![The ESP32-P4 board from the demo, plugged in over USB-C](https://github.com/user-attachments/assets/ad8cc5ab-df89-45d3-94ad-0cf43870d64b)
 
 *The board from the demo: a Wireless-Tag WT01P4C5-S1 (ESP32-P4), one USB-C cable.*
 

@@ -1,0 +1,16 @@
+#!/command/with-contenv sh
+# First start of the demo container: install the bundled plugin and the example
+# project into /opt/data. Later starts find both and do nothing.
+set -e
+as_hermes() { s6-setuidgid hermes "$@"; }
+if [ ! -f /opt/data/plugins/numogram/plugin.yaml ]; then
+    echo "[numogram] installing the plugin (one time)"
+    as_hermes hermes plugins install file:///opt/numogram/plugin --yes-deps --enable
+    # Let a crash alert wake the session (Hermes keeps plugin messages off until this is set).
+    as_hermes hermes config set plugins.entries.numogram.allow_gateway_injection true
+fi
+if [ ! -d /opt/data/projects/sensor-hub ]; then
+    mkdir -p /opt/data/projects
+    cp -R /opt/numogram/plugin/examples/sensor-hub /opt/data/projects/
+    chown -R hermes:hermes /opt/data/projects
+fi

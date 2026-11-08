@@ -1,0 +1,7 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+examples/*/build/
+examples/*/sdkconfig
+examples/*/sdkconfig.old
+.DS_Store

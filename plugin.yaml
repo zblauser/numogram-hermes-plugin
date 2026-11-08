@@ -1,0 +1,22 @@
+name: numogram
+version: 0.1.0
+description: Hermes debugs your ESP32. Reads crashes over USB, maps them to source lines, then fixes, builds and flashes with your approval. Also checks firmware pins against KiCad netlists and audits chip security, read-only. Never burns eFuses.
+requires_hermes: ">=0.22.7"
+python_dependencies:
+  - esptool>=5.6,<6
+  - pyserial>=3.5,<4
+  - pyelftools>=0.31,<1
+provides_tools:
+  - board_build
+  - board_pins
+  - board_status
+  - board_watch
+  - board_log
+  - board_flash
+  - board_crash
+  - board_audit
+  - board_note
+provides_hooks:
+  - pre_tool_call
+  - pre_llm_call
+  - post_llm_call

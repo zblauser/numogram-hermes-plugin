@@ -28,9 +28,11 @@ import time
 from pathlib import Path
 
 try:
+    from .childenv import minimal_env
     from .guard import EfuseGuard
 except ImportError:  # run as a script, possibly with python -I
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from childenv import minimal_env
     from guard import EfuseGuard
 
 FLASH_BYTES = 4 << 20
@@ -102,7 +104,7 @@ class Chip:
             if mode == "download":
                 args += ["-global", f"driver=esp32c3.gpio,property=strap_mode,value={STRAP_DOWNLOAD}"]
             out = None if self.verbose else subprocess.DEVNULL
-            self.proc = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=out, stderr=out)
+            self.proc = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=out, stderr=out, env=minimal_env())
             deadline = time.time() + 10
             while True:
                 try:
@@ -246,8 +248,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--data-port", type=int, default=4000)
     ap.add_argument("--control-port", type=int, default=4001)
-    home = os.environ.get("HERMES_HOME", os.path.expanduser("~"))
-    ap.add_argument("--workdir", type=Path, default=Path(home) / "numogram" / "vboard")
+    ap.add_argument("--workdir", type=Path, required=True, help="where the flash and eFuse images live")
     ap.add_argument("--erase", action="store_true", help="start with blank flash")
     ap.add_argument("--verbose", action="store_true", help="show QEMU's own output")
     a = ap.parse_args()

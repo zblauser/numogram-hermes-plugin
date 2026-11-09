@@ -23,6 +23,7 @@ from urllib.parse import urlparse
 import serial
 
 from . import logscan
+from .childenv import minimal_env
 
 TIMEOUT_S = 300
 _FLASH_FLAG = re.compile(r"^--flash[_-](mode|freq|size)$")
@@ -36,6 +37,14 @@ class BoardError(RuntimeError):
 VIRTUAL_PORT = 4410  # data; control is the next port
 _vboard: subprocess.Popen | None = None
 _vboard_lock = threading.Lock()
+
+
+def data_dir() -> Path:
+    """numogram's state, under the active Hermes profile's home."""
+    from hermes_constants import get_hermes_home
+    d = Path(get_hermes_home()) / "numogram"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
 
 
 def port() -> str:
@@ -76,14 +85,15 @@ def _virtual() -> str:
         from . import vboard
         if not vboard.find_qemu():
             raise BoardError(vboard.NO_QEMU)
-        work = Path(os.environ.get("HERMES_HOME", os.path.expanduser("~"))) / "numogram" / "vboard"
+        work = data_dir() / "vboard"
         work.mkdir(parents=True, exist_ok=True)
         log = work / "vboard.log"
         cmd = [sys.executable, "-I", vboard.__file__, "--data-port", str(dp), "--control-port", str(dp + 1),
                "--workdir", str(work)]
         with open(log, "w") as out:
             _vboard = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=out, stderr=subprocess.STDOUT,
-                                       start_new_session=True)
+                                       start_new_session=True,
+                                       env=minimal_env("NUMOGRAM_QEMU", "IDF_TOOLS_PATH", "IDF_PATH"))
         deadline = time.time() + 15
         while _vboard_status(dp) is None:
             if _vboard.poll() is not None:
@@ -263,12 +273,27 @@ class Watcher:
         return Watcher._Hold(self)
 
 
+def _dep_path() -> str:
+    """The folders this process loaded esptool and pyserial from, so the child Python finds
+    them too. Plugin dependencies live outside Hermes's own venv."""
+    import importlib.util
+    dirs: list[str] = []
+    for m in ("esptool", "serial"):
+        spec = importlib.util.find_spec(m)
+        if spec and spec.origin:
+            d = str(Path(spec.origin).parents[1])
+            if d not in dirs:
+                dirs.append(d)
+    return os.pathsep.join(dirs)
+
+
 def _esptool(args: list[str], *, module: str = "esptool", cwd: str | None = None, timeout: int = TIMEOUT_S):
     p = port()
     before = ["--before", "no-reset"] if _is_bridge(p) else []
     cmd = [sys.executable, "-m", module, "--port", p, *before, *args]
     try:
-        r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+        r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout,
+                           env={**minimal_env(), "PYTHONPATH": _dep_path()})
     except subprocess.TimeoutExpired as e:
         raise BoardError(f"{module} timed out after {timeout}s") from e
     return r.returncode, (r.stdout or "") + (r.stderr or "")

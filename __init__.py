@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import contextvars
 import json
-import os
 import re
 import threading
 import time
@@ -26,9 +25,7 @@ _session: contextvars.Context | None = None  # the session that last used a boar
 
 
 def _home() -> Path:
-    p = Path(os.environ.get("HERMES_HOME", "~/.hermes")).expanduser() / "numogram"
-    p.mkdir(parents=True, exist_ok=True)
-    return p
+    return board.data_dir()
 
 
 def _busy() -> bool:

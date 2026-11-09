@@ -18,7 +18,8 @@ sys.path.insert(0, str(PLUGIN))
 from guard import WRITE_OP_CODE  # noqa: E402
 
 FAKE_QEMU = r'''
-import re, socket, sys
+import os, re, socket, sys
+assert "NOUS_API_KEY" not in os.environ, "Hermes's environment leaked into QEMU"
 args = " ".join(sys.argv[1:])
 port = int(re.search(r"-serial tcp:127\.0\.0\.1:(\d+),server=on,wait=on", args).group(1))
 mode = "download" if "strap_mode,value=0x02" in args else "run"
@@ -54,7 +55,7 @@ def vb(tmp_path):
     fake.write_text(f"#!{sys.executable}\n{FAKE_QEMU}")
     fake.chmod(0o755)
     dp = _free_port_pair()
-    env = dict(os.environ, NUMOGRAM_QEMU=str(fake))
+    env = dict(os.environ, NUMOGRAM_QEMU=str(fake), NOUS_API_KEY="must-not-reach-qemu")
     p = subprocess.Popen([sys.executable, str(PLUGIN / "vboard.py"), "--data-port", str(dp),
                           "--control-port", str(dp + 1), "--workdir", str(tmp_path / "img")],
                          env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

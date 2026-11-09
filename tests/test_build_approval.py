@@ -224,3 +224,50 @@ def test_turn_hooks_registered(monkeypatch):
 
     pkg.register(Ctx())
     assert {"pre_tool_call", "pre_llm_call", "post_llm_call"} <= set(hooks)
+
+
+def test_child_env_is_an_allowlist(monkeypatch):
+    import os
+    _pkg()
+    ce, bm = sys.modules["numogram.childenv"], sys.modules["numogram.build"]
+    for k, v in {"OPENAI_API_KEY": "sk-x", "NOUS_TOKEN": "t", "CCACHE_DIR": "/c", "LC_ALL": "C",
+                 "IDF_TOOLS_PATH": "/tools"}.items():
+        monkeypatch.setenv(k, v)
+    env = bm._env(Path("/idf"))
+    assert "OPENAI_API_KEY" not in env and "NOUS_TOKEN" not in env
+    assert env["IDF_PATH"] == "/idf" and env["IDF_TOOLS_PATH"] == "/tools"
+    assert env["CCACHE_DIR"] == "/c" and env["LC_ALL"] == "C" and env["PATH"]
+    allowed = set(ce.BASE) | {"PATH"} | {k for k in os.environ if k.startswith("LC_")}
+    assert set(ce.minimal_env()) <= allowed
+
+
+def test_data_dir_follows_the_active_hermes_profile(monkeypatch, tmp_path):
+    import types
+    _pkg()
+    fake = types.ModuleType("hermes_constants")
+    fake.get_hermes_home = lambda: tmp_path / "profile"
+    monkeypatch.setitem(sys.modules, "hermes_constants", fake)
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "not-this"))
+    d = sys.modules["numogram.board"].data_dir()
+    assert d == tmp_path / "profile" / "numogram" and d.is_dir()
+
+
+def test_esptool_child_gets_only_its_package_path(monkeypatch):
+    _pkg()
+    bd = sys.modules["numogram.board"]
+    seen = {}
+
+    def fake_run(cmd, **kw):
+        seen.update(kw["env"])
+        class R: returncode, stdout, stderr = 0, "", ""
+        return R()
+
+    monkeypatch.setenv("NUMOGRAM_PORT", "/dev/null")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-x")
+    monkeypatch.setenv("PYTHONPATH", "/somewhere/else")
+    monkeypatch.setattr(bd.subprocess, "run", fake_run)
+    bd._esptool(["version"])
+    import esptool
+    assert "OPENAI_API_KEY" not in seen
+    assert str(Path(esptool.__file__).parents[1]) in seen["PYTHONPATH"].split(":")
+    assert "/somewhere/else" not in seen["PYTHONPATH"]

@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.1] - 2026-11-09
+
+Catalog review fixes.
+
+- Programs numogram starts (`idf.py`, `esptool`, the virtual board and QEMU) get an allowlist of
+  environment variables, never Hermes's own. A build runs project scripts, so they can't see API keys.
+- State lives under the active Hermes profile (`get_hermes_home() / "numogram"`), not a raw `HERMES_HOME` read.
+- `vboard.py` run by hand now needs `--workdir`.
+
 ## [v0.1.0] - 2026-11-08
 
 First release.

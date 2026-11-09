@@ -10,9 +10,10 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 import time
 from pathlib import Path
+
+from .childenv import minimal_env
 
 TIMEOUT_S = 900
 MAX_ERRORS = 20
@@ -35,14 +36,8 @@ class BuildError(Exception):
 
 
 def _env(idf: Path) -> dict:
-    """ESP-IDF picks its Python from PATH. Hide the venv Hermes runs in, or export.sh refuses to run."""
-    env = dict(os.environ)
-    venv = os.environ.get("VIRTUAL_ENV") or (sys.prefix if sys.prefix != sys.base_prefix else None)
-    for k in ("VIRTUAL_ENV", "PYTHONHOME", "PYTHONPATH"):
-        env.pop(k, None)
-    if venv:
-        bad = str(Path(venv) / "bin")
-        env["PATH"] = os.pathsep.join(p for p in env.get("PATH", "").split(os.pathsep) if p.rstrip("/") != bad)
+    """Only what ESP-IDF needs. The build runs the project's own scripts, so no Hermes secrets."""
+    env = minimal_env("IDF_PATH", "IDF_TOOLS_PATH", "IDF_PYTHON_ENV_PATH", prefixes=("CCACHE_",))
     env["IDF_PATH"] = str(idf)
     return env
 

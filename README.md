@@ -184,6 +184,10 @@ Read this before installing.
   - `espefuse summary`, read-only, for the audit. The plugin has no eFuse write.
   - `idf.py build`, which runs the project's own build scripts
   - Espressif's `qemu-system-riscv32`, only for the virtual board, with networking off
+
+  Each one gets a short allowlist of environment variables (`PATH`, `HOME`, locale,
+  ESP-IDF's own), never your Hermes API keys or tokens. A build runs the project's own
+  scripts, so this matters.
 - **Starts conversations:** a crash alert is sent into your Hermes session as a message.
   That needs `allow_gateway_injection: true` (above), which is off until you set it.
 - **Runs in the background:** a serial watcher thread while watching is on, and a QEMU
@@ -192,7 +196,8 @@ Read this before installing.
   bridge or the virtual board. Installing downloads `esptool`, `pyserial` and
   `pyelftools`. Building the demo image downloads ESP-IDF.
 - **Files:** reads the project, build folder and netlist you point it at. Writes only
-  under `$HERMES_HOME/numogram` (board notes, last flash, virtual board).
+  under the active Hermes profile's home, in `numogram/` (board notes, last flash,
+  virtual board).
 - **Board output is treated as untrusted.** A device could print anything, so serial
   text is labeled as data for the model. Crash alerts are built from fixed text and
   checked numbers, so firmware can't slip instructions into them.

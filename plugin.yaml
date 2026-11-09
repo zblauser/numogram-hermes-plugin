@@ -1,5 +1,5 @@
 name: numogram
-version: 0.1.0
+version: 0.1.1
 description: Hermes debugs your ESP32. Reads crashes over USB, maps them to source lines, then fixes, builds and flashes with your approval. Also checks firmware pins against KiCad netlists and audits chip security, read-only. Never burns eFuses.
 requires_hermes: ">=0.22.7"
 python_dependencies:

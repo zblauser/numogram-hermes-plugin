@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.1.2] - 2026-11-09
+
+Polish.
+
+- Tool schemas mark required arguments and describe every argument, so models get calls right the first time.
+- A bad argument (`seconds: "soon"`) comes back as a plain error, not a traceback. `on: "false"` now means false.
+- README: the tests section says what the tests prove, not a count that goes stale.
+
 ## [v0.1.1] - 2026-11-09
 
 Catalog review fixes.

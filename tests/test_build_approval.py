@@ -271,3 +271,31 @@ def test_esptool_child_gets_only_its_package_path(monkeypatch):
     assert "OPENAI_API_KEY" not in seen
     assert str(Path(esptool.__file__).parents[1]) in seen["PYTHONPATH"].split(":")
     assert "/somewhere/else" not in seen["PYTHONPATH"]
+
+
+def test_tool_schemas_mark_required_args():
+    pkg = _pkg()
+    tools = {}
+
+    class Ctx:
+        def register_tool(self, **k): tools[k["name"]] = k["schema"]["parameters"]
+        def register_hook(self, name, fn): pass
+        def on_unload(self, fn): pass
+
+    pkg.register(Ctx())
+    assert len(tools) == 9
+    for name, p in tools.items():
+        assert set(p.get("required", [])) <= set(p["properties"]), name
+        assert all(v.get("description") for v in p["properties"].values()), name
+    assert tools["board_flash"]["required"] == ["build_dir"]
+    assert tools["board_build"]["required"] == ["project_dir"]
+    assert set(tools["board_pins"]["required"]) == {"netlist", "project_dir"}
+
+
+def test_bad_tool_args_come_back_as_a_plain_error():
+    pkg = _pkg()
+    out = json.loads(pkg._tool(pkg.board_log)({"seconds": "soon"}))
+    assert out == {"error": "seconds must be a whole number."}
+    assert pkg._int({"chars": -5}, "chars", 4000, 200, 20000) == 200
+    assert pkg._bool({"on": "false"}, "on", True) is False
+    assert pkg._bool({}, "on", True) is True

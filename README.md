@@ -226,5 +226,6 @@ Read this before installing.
 cd tests && python -m pytest
 ```
 
-117 tests, no board needed. The virtual board tests use a fake QEMU, and the eFuse
-guard is tested against espefuse's own virtual eFuse chip for 14 chip models.
+No board needed. The virtual board tests use a fake QEMU, the eFuse guard is tested
+against espefuse's own virtual eFuse chip for 14 chip models, and a test fails if an
+API key could reach any program numogram starts.

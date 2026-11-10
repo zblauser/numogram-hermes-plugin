@@ -176,13 +176,14 @@ Read this before installing.
 
 - **It asks first.** Builds and flashes go through Hermes's approval prompt. A build
   runs the project's own build scripts, which Hermes may have just edited, so it gets
-  the same gate as a flash. With nobody there to answer (scheduled jobs, `-q`, an
+  the same gate as a flash. Each has its own approval rule, so "allow for this session"
+  on builds doesn't allow flashes. With nobody there to answer (scheduled jobs, `-q`, an
   unattended gateway), Hermes blocks them. Turning approvals off (`--yolo` or
   `approvals.mode: off`) is your choice. numogram never approves anything itself.
 - **Programs it runs**, always with fixed arguments:
   - `esptool`, to identify, flash and restart the board
   - `espefuse summary`, read-only, for the audit. The plugin has no eFuse write.
-  - `idf.py build`, which runs the project's own build scripts
+  - ESP-IDF's `export.sh`, then `idf.py build`, which runs the project's own build scripts
   - Espressif's `qemu-system-riscv32`, only for the virtual board, with networking off
 
   Each one gets a short allowlist of environment variables (`PATH`, `HOME`, locale,
@@ -192,12 +193,14 @@ Read this before installing.
   That needs `allow_gateway_injection: true` (above), which is off until you set it.
 - **Runs in the background:** a serial watcher thread while watching is on, and a QEMU
   process for the virtual board, which stops when Hermes exits.
-- **Network:** none from the plugin, except connections on your own machine to the
-  bridge or the virtual board. Installing downloads `esptool`, `pyserial` and
-  `pyelftools`. Building the demo image downloads ESP-IDF.
-- **Files:** reads the project, build folder and netlist you point it at. Writes only
-  under the active Hermes profile's home, in `numogram/` (board notes, last flash,
-  virtual board).
+- **Network:** the plugin connects only to the bridge or the virtual board, both on
+  your own machine (`127.0.0.1`), or to the `socket://` address you set in
+  `NUMOGRAM_PORT`. Those connections have no password, like a local serial port: any
+  program on your computer could use them too. Installing downloads `esptool`,
+  `pyserial` and `pyelftools`. Building the demo image downloads ESP-IDF.
+- **Files:** reads the project, build folder, ELF and netlist you point it at. A build
+  writes into its build folder. numogram's own state lives only under the active
+  Hermes profile's home, in `numogram/` (board notes, last flash, virtual board).
 - **Board output is treated as untrusted.** A device could print anything, so serial
   text is labeled as data for the model. Crash alerts are built from fixed text and
   checked numbers, so firmware can't slip instructions into them.
